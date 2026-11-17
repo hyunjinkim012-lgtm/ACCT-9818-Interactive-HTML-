@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bond Valuation & Effective Interest Amortization</title>
+  <style>
+    :root { color-scheme: light; --bg:#f4f7fb; --surface:#ffffff; --ink:#172439; --muted:#66758b; --line:#dce4ee; --accent:#215cbb; --pale:#edf4ff; --good:#136b4a; --radius:16px; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; line-height:1.5; }
+    .wrap { max-width:1120px; margin:0 auto; padding:42px 22px 70px; }
+    header { margin-bottom:26px; }
+    h1 { font-size:clamp(1.75rem,3vw,2.45rem); line-height:1.18; margin:0 0 10px; letter-spacing:-.035em; }
+    header p { color:var(--muted); margin:0; }
+    .panel { border:1px solid var(--line); border-radius:var(--radius); background:var(--surface); box-shadow:0 5px 24px rgba(23,36,57,.045); padding:24px; margin-bottom:20px; }
+    h2 { font-size:1.12rem; margin:0 0 18px; }
+    .controls { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:14px; }
+    label { display:block; font-size:.84rem; color:#40516a; font-weight:650; margin-bottom:8px; }
+    select { display:block; width:100%; border-radius:10px; border:1px solid #cbd6e5; background:#fff; color:var(--ink); padding:11px 30px 11px 11px; font-size:.95rem; font-weight:600; cursor:pointer; }
+    select:focus-visible, button:focus-visible { outline:3px solid #90b7f4; outline-offset:2px; }
+    .results { display:grid; grid-template-columns:1.3fr 1fr 1fr; gap:14px; margin-bottom:20px; }
+    .result { padding:21px 23px; border:1px solid var(--line); border-radius:var(--radius); background:var(--surface); min-width:0; }
+    .result.primary { background:var(--pale); border-color:#cbdcf8; }
+    .eyebrow { font-size:.8rem; font-weight:650; color:var(--muted); }
+    .value { margin-top:7px; font-weight:750; font-size:clamp(1.22rem,2.2vw,1.8rem); font-variant-numeric:tabular-nums; letter-spacing:-.025em; }
+    .type { color:var(--good); }
+    .hint { font-size:.81rem; margin-top:5px; color:var(--muted); }
+    .table-head { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:14px; }
+    .table-head h2 { margin:0; }
+    button { background:#fff; border:1px solid #bfcfe4; border-radius:9px; padding:9px 13px; font:inherit; font-size:.85rem; color:#204c8e; font-weight:700; cursor:pointer; }
+    button:hover { background:#edf4ff; }
+    .scroll { overflow-x:auto; border-radius:11px; border:1px solid var(--line); }
+    table { border-collapse:collapse; width:100%; min-width:720px; font-variant-numeric:tabular-nums; }
+    th { background:#eff3f9; color:#41516b; font-size:.81rem; text-align:right; padding:13px 16px; font-weight:700; white-space:nowrap; }
+    th:first-child, td:first-child { text-align:center; }
+    td { font-size:.9rem; padding:12px 16px; text-align:right; border-top:1px solid var(--line); white-space:nowrap; }
+    tbody tr:nth-child(even) { background:#fafcff; }
+    tbody tr:last-child { background:#f0f6ff; font-weight:700; }
+    .note { font-size:.85rem; color:var(--muted); margin:14px 0 0; }
+    .formula { font-size:.86rem; color:#52657e; padding:15px 18px; background:#f9fbfe; border:1px solid var(--line); border-radius:12px; margin-top:18px; }
+    .formula strong { color:#243b5c; }
+    @media (max-width:880px) { .controls { grid-template-columns:repeat(3,minmax(0,1fr)); } .results { grid-template-columns:repeat(2,minmax(0,1fr)); } .result.primary { grid-column:1/-1; } }
+    @media (max-width:580px) { .wrap { padding:24px 14px 44px; } .panel { padding:17px; } .controls { grid-template-columns:repeat(2,minmax(0,1fr)); } .results { grid-template-columns:1fr; } .result.primary { grid-column:auto; } }
+  </style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <h1>Bond Valuation &amp; Amortization</h1>
+    <p>Change any assumption to recalculate the issue price and effective-interest amortization schedule automatically.</p>
+  </header>
+  <section class="panel" aria-labelledby="inputs-title">
+    <h2 id="inputs-title">Bond assumptions</h2>
+    <div class="controls">
+      <div><label for="face">Bond face value</label><select id="face"><option value="100000">$100,000</option><option value="200000">$200,000</option><option value="300000" selected>$300,000</option><option value="400000">$400,000</option><option value="500000">$500,000</option><option value="750000">$750,000</option><option value="1000000">$1,000,000</option></select></div>
+      <div><label for="coupon">Coupon interest rate</label><select id="coupon"><option value="0">0%</option><option value="0.02">2%</option><option value="0.04">4%</option><option value="0.06">6%</option><option value="0.08">8%</option><option value="0.10" selected>10%</option><option value="0.12">12%</option><option value="0.14">14%</option><option value="0.16">16%</option></select></div>
+      <div><label for="market">Market interest rate</label><select id="market"><option value="0">0%</option><option value="0.02">2%</option><option value="0.04">4%</option><option value="0.06">6%</option><option value="0.08">8%</option><option value="0.10" selected>10%</option><option value="0.12">12%</option><option value="0.14">14%</option><option value="0.16">16%</option></select></div>
+      <div><label for="years">Years to maturity</label><select id="years"><option value="1">1 year</option><option value="2">2 years</option><option value="3" selected>3 years</option><option value="4">4 years</option><option value="5">5 years</option><option value="7">7 years</option><option value="10">10 years</option><option value="15">15 years</option><option value="20">20 years</option><option value="30">30 years</option></select></div>
+      <div><label for="frequency">Interest payment frequency</label><select id="frequency"><option value="1">Annual</option><option value="2" selected>Semiannual</option><option value="4">Quarterly</option><option value="12">Monthly</option></select></div>
+    </div>
+  </section>
+  <section class="results" aria-live="polite" aria-atomic="true">
+    <div class="result primary"><div class="eyebrow">Bond issue price</div><div class="value" id="price">$300,000.00</div><div class="hint">Present value of coupons and principal</div></div>
+    <div class="result"><div class="eyebrow">Issuance classification</div><div class="value type" id="classification">At par</div><div class="hint" id="deviation">$0.00 from face value</div></div>
+    <div class="result"><div class="eyebrow">Cash coupon per period</div><div class="value" id="couponPayment">$15,000.00</div><div class="hint" id="periodInfo">6 periods · 5.00% market rate per period</div></div>
+  </section>
+  <section class="panel" aria-labelledby="schedule-title">
+    <div class="table-head"><h2 id="schedule-title">Effective-interest amortization schedule</h2><button id="csv" type="button">Download CSV</button></div>
+    <div class="scroll"><table><thead><tr><th scope="col">Period</th><th scope="col">Interest Expense</th><th scope="col">Cash Coupon</th><th scope="col">Difference</th><th scope="col">Book Value of Bond</th></tr></thead><tbody id="schedule"></tbody></table></div>
+    <p class="note"><strong>Difference = Interest Expense − Cash Coupon.</strong> A positive difference increases the bond's book value (discount amortization); a negative difference decreases it (premium amortization). Period 0 shows the initial issue price. The final period is adjusted for rounding to finish at face value.</p>
+    <div class="formula"><strong>Valuation:</strong> Issue price = PV of coupon payments + PV of face value, discounted using the market interest rate per payment period. <strong>Effective interest:</strong> beginning book value × market rate per period. Rates shown in the dropdowns are annual nominal rates, divided by payment frequency.</div>
+  </section>
+</main>
+<script>
+  'use strict';
+  const ids = ['face','coupon','market','years','frequency'];
+  const $ = id => document.getElementById(id);
+  const money = value => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits:2,maximumFractionDigits:2}).format(Math.abs(value) < 0.0000001 ? 0 : value);
+  const roundCents = value => Math.round((value + Number.EPSILON) * 100) / 100;
+  let csvRows = [];
+
+  function update() {
+    const face = Number($('face').value);
+    const couponRate = Number($('coupon').value);
+    const marketRate = Number($('market').value);
+    const years = Number($('years').value);
+    const frequency = Number($('frequency').value);
+    const count = years * frequency;
+    const rate = marketRate / frequency;
+    const coupon = roundCents(face * couponRate / frequency);
+    const rawCoupon = face * couponRate / frequency;
+    const factor = Math.pow(1 + rate, -count);
+    const issuePrice = rate === 0 ? rawCoupon * count + face : rawCoupon * (1-factor) / rate + face * factor;
+    let book = roundCents(issuePrice);
+    let classification = 'At par', deviation = '$0.00 from face value';
+    const amount = roundCents(book - face);
+    if (amount > 0) { classification = 'At a premium'; deviation = `${money(amount)} above face value`; }
+    else if (amount < 0) { classification = 'At a discount'; deviation = `${money(-amount)} below face value`; }
+    $('price').textContent = money(book);
+    $('classification').textContent = classification;
+    $('deviation').textContent = deviation;
+    $('couponPayment').textContent = money(coupon);
+    $('periodInfo').textContent = `${count} ${count === 1 ? 'period' : 'periods'} · ${(rate*100).toFixed(2)}% market rate per period`;
+
+    const rows = [{period:0,expense:null,coupon:null,difference:null,book}];
+    for (let period = 1; period <= count; period++) {
+      let expense = roundCents(book * rate);
+      let difference = roundCents(expense - coupon);
+      if (period === count) {
+        // Clear accumulated cent rounding differences in the final row.
+        difference = roundCents(face - book);
+        expense = roundCents(coupon + difference);
+      }
+      book = roundCents(book + difference);
+      rows.push({period,expense,coupon,difference,book});
+    }
+    $('schedule').replaceChildren(...rows.map(r => {
+      const tr = document.createElement('tr');
+      const values = [r.period, r.expense === null ? '—' : money(r.expense), r.coupon === null ? '—' : money(r.coupon), r.difference === null ? '—' : money(r.difference), money(r.book)];
+      for (const value of values) { const td=document.createElement('td'); td.textContent=value; tr.appendChild(td); }
+      return tr;
+    }));
+    csvRows = [['Period','Interest Expense','Cash Coupon','Difference','Book Value of Bond'],...rows.map(r=>[r.period,r.expense ?? '',r.coupon ?? '',r.difference ?? '',r.book])];
+  }
+  ids.forEach(id => $(id).addEventListener('change',update));
+  $('csv').addEventListener('click', () => {
+    const content = csvRows.map(row=>row.join(',')).join('\r\n');
+    const blob = new Blob([content],{type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download='bond_amortization_schedule.csv'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),500);
+  });
+  update();
+</script>
+</body>
+</html>
